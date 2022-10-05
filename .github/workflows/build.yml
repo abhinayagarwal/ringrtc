@@ -15,8 +15,15 @@ jobs:
       with:
         website: jdk.java.net
         release: 19
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          $GITHUB_WORKSPACE/ringrtc/out
+          $RUNNER_TEMP/jextract.tar.gz
     - name: Checkout tools repo
       run: |
+        echo $GITHUB_WORKSPACE
         cd $GITHUB_WORKSPACE
         git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
     - name: Install rustup
