@@ -1,0 +1,36 @@
+name: Build and publish snapshots
+on:
+  push:
+    branches: [ javabuild ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: javabuild
+    - name: Set up OpenJDK 19
+      uses: oracle-actions/setup-java@v1
+      with:
+        website: jdk.java.net
+        release: 19
+    - name: Checkout tools repo
+      run: |
+        cd $GITHUB_WORKSPACE
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+    - name: Install rustup
+      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -y
+    - name: Download and extract JEXTRACT
+      run: |
+        download_url="https://download.java.net/java/early_access/jextract/2/openjdk-19-jextract+2-3_linux-x64_bin.tar.gz"
+        wget -O $RUNNER_TEMP/jextract.tar.gz $download_url
+        tar -xvzf $RUNNER_TEMP/jextract.tar.gz -C $GITHUB_WORKSPACE
+    - name: Build and release snapshot
+      run: |
+        export PATH=$GITHUB_WORKSPACE/depot_tools/:$PATH
+        export JAVA_HOME=path-to/jdk-19.jdk/Contents/Home
+        make java PLATFORM=linux JEXTRACT=$GITHUB_WORKSPACE/jextract-19 JDK=$JAVA_HOME_17_X64 TARGET_ARCH=x64
+        nano src/rust/build.rs
+        cd src/java/tring
+        mvn -Dclassifier=linux deploy
