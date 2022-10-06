@@ -35,6 +35,5 @@ jobs:
         make java PLATFORM=unix JEXTRACT=$GITHUB_WORKSPACE/jextract-19 JDK=$JAVA_HOME TARGET_ARCH=x64
     - name: Deploy snapshot
       run: |
-        nano src/rust/build.rs
         cd src/java/tring
         mvn -Dclassifier=linux deploy -X
