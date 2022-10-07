@@ -16,6 +16,7 @@ jobs:
     - name: Install latest bash on macOS
       if: runner.os == 'macOS'
       run: |
+        ls /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
         brew update
         brew install bash
         brew install coreutils
