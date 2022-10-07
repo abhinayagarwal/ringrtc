@@ -18,6 +18,7 @@ jobs:
       run: |
         brew update
         brew install bash
+        brew install coreutils
     - name: Set environment variables
       run: |
         echo "OS=${RUNNER_OS,,}" >> $GITHUB_ENV
