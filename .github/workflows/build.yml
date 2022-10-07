@@ -1,15 +1,43 @@
 name: Build and publish snapshots
 on:
   push:
-    branches: [ javabuild ]
+    branches: [ add-workflow ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
       with:
         ref: javabuild
+    - name: Set environment variables
+      run: |
+        echo "OS=${RUNNER_OS,,}" >> $GITHUB_ENV
+        echo "ARCH=${RUNNER_ARCH,,}" >> $GITHUB_ENV
+        if [[ ${{ runner.os }} == "Linux" ]]
+        then
+          platform=unix
+          classifier=linux-x86_64
+        elif [[ ${{ runner.os }} == "macOS" ]]
+        then
+          platform=mac
+          if [[ ${{ runner.arch }} == "X64" ]]
+          then
+            classifier=darwin-x86_64
+          else
+            classifier=darwin-aarch64
+          fi
+        elif [[ ${{ runner.os }} == "Windows" ]]
+        then
+          platform=windows
+          classifier=win-x86_64
+        fi
+        echo "PLATFORM=$platform" >> $GITHUB_ENV
+        echo "CLASSIFIER=$classifier" >> $GITHUB_ENV
+      shell: bash
     - name: Download OpenJDK 19
       id: download
       uses: oracle-actions/setup-java@v1
@@ -28,26 +56,28 @@ jobs:
         server-password: MAVEN_CENTRAL_TOKEN
     - name: Checkout tools repo
       run: |
-        echo $JAVA_HOME
+        echo "print env variables"
+        echo ${{ env.OS }}
+        echo ${{ env.ARCH }}
+        echo ${{ env.PLATFORM }}
+        echo ${{ env.CLASSIFIER }}
         cd $GITHUB_WORKSPACE
         git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
     - name: Install rustup
       run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - name: Download and extract JEXTRACT
       run: |
-        echo $JAVA_HOME
-        download_url="https://download.java.net/java/early_access/jextract/2/openjdk-19-jextract+2-3_linux-x64_bin.tar.gz"
+        download_url="https://download.java.net/java/early_access/jextract/2/openjdk-19-jextract+2-3_${{ env.OS }}-${{ env.ARCH }}_bin.tar.gz"
         wget -q --show-progress -O $RUNNER_TEMP/jextract.tar.gz $download_url
         tar -xvzf $RUNNER_TEMP/jextract.tar.gz -C $GITHUB_WORKSPACE
     - name: Build
       run: |
         export PATH=$GITHUB_WORKSPACE/depot_tools/:$PATH
-        echo $JAVA_HOME
-        make java PLATFORM=unix JEXTRACT=$GITHUB_WORKSPACE/jextract-19 JDK=$JAVA_HOME TARGET_ARCH=x64
+        make java PLATFORM=${{ env.PLATFORM }} JEXTRACT=$GITHUB_WORKSPACE/jextract-19 JDK=$JAVA_HOME TARGET_ARCH=${{ env.ARCH }}
     - name: Deploy snapshot
       run: |
         cd src/java/tring
-        mvn -Dclassifier=linux deploy
+        mvn -Dclassifier=${{ env.CLASSIFIER }} deploy
       env:
         MAVEN_USERNAME: ${{ secrets.GLUON_NEXUS_USERNAME }}
         MAVEN_CENTRAL_TOKEN: ${{ secrets.GLUON_NEXUS_PASSWORD }}
