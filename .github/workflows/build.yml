@@ -16,7 +16,6 @@ jobs:
     - name: Install latest bash on macOS
       if: runner.os == 'macOS'
       run: |
-        ls /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
         brew update
         brew install bash
         brew install coreutils
@@ -80,7 +79,7 @@ jobs:
     - name: Build
       run: |
         export PATH=$GITHUB_WORKSPACE/depot_tools/:$PATH
-        make java PLATFORM=${{ env.PLATFORM }} JEXTRACT=$GITHUB_WORKSPACE/jextract-19 JDK=$JAVA_HOME TARGET_ARCH=${{ env.ARCH }}
+        make java PLATFORM=${{ env.PLATFORM }} JEXTRACT=$GITHUB_WORKSPACE/jextract-19 JDK=$JAVA_HOME TARGET_ARCH=${{ env.ARCH }} MACOS_SDK_VERSION=12.1
     - name: Deploy snapshot
       run: |
         cd src/java/tring
